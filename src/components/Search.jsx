@@ -1,4 +1,5 @@
 import searchIcon from '../assets/search.svg'
+import PropTypes from 'prop-types';
 const Search = ({ searchTerm, setSearchTerm }) => {
   return (
     <div className="search">
@@ -15,4 +16,8 @@ const Search = ({ searchTerm, setSearchTerm }) => {
   )
 }
 
-export default Search
+Search.propTypes = {
+  searchTerm: PropTypes.string.isRequired,
+  setSearchTerm: PropTypes.func.isRequired
+};
+export default Search;

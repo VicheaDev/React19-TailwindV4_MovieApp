@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react'
 import heroImage from './assets/hero.png'
 import Search from './components/Search'
+import MovieCard from './components/MovieCard'
 
 const App = () => {
   const [searchTerm, setSearchTerm] = useState('')
-  const [error, setError] = useState(null)
+  const [errorMessage, setErrorMessage] = useState(null)
+  const [movieList, setMovieList] = useState([])
+  const [isLoading, setIsLoading] = useState(false)
 
   const API_BASE_URL = 'https://api.themoviedb.org/3'
 
@@ -12,40 +15,75 @@ const App = () => {
 
   const API_OPTIONS = {
     method: 'GET',
-    header: {
+    headers: {
       accept: 'application/json',
-      Authorization: 'Bearer ${API_KEY}',
+      Authorization: `Bearer ${API_KEY}`,
     },
   }
 
-  const fetchMovies = async () => {
+  const fetchMovie = async ( query = '') => {
+    setIsLoading(true)
+    setErrorMessage('')
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/movie/popular?api_key=${API_KEY}`,
-        API_OPTIONS,
-      )
+      const endpoint = query
+      ?`${API_BASE_URL}/search/movie?query=${encodeURIComponent(query)}`
+      :`${API_BASE_URL}/discover/movie?sort_by=popularity.desc`
+      const response = await fetch(endpoint, API_OPTIONS)
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch movies')
+      }
+
       const data = await response.json()
       console.log(data)
+
+      if (data.Response === 'False') {
+        setErrorMessage(data.Error || 'Error fetching movies')
+        setMovieList([])
+        return
+      }
+
+      setMovieList(data.results || [])
     } catch (error) {
-      console.error('Error fetching movies:', error)
-      setError(error)
+      console.log('Error fetching movies:', error)
+      setErrorMessage('Error fetching movies please try again later')
+    } finally {
+      setIsLoading(false)
     }
   }
   //useEffect
-  useEffect(() => {}, [])
+  useEffect(() => {
+    fetchMovie(searchTerm)
+  }, [searchTerm])
 
   return (
     <main>
       <div className="pattern"></div>
-      <div className="warper">
+      <div className="wrapper">
         <header>
           <img src={heroImage} alt="hero" />
           <h1>
             Find <span className="text-gradient">Movies </span>You&#39;ll Love
             Enjoy without Hassle
           </h1>
+          <Search searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
         </header>
-        <Search searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+        <section className="all-movies">
+          <h2>All Movies</h2>
+          {isLoading ? (
+            <p className="text-white">Loading...</p>
+          ) : errorMessage ? (
+            <p className="text-red-700">{setErrorMessage}</p>
+          ) : (
+            <ul>
+              {movieList.map((movie) => {
+                return(
+                  <MovieCard key={movie.id} movie={movie} />
+                )
+              })}
+            </ul>
+          )}
+        </section>
       </div>
     </main>
   )
